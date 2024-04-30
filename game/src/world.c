@@ -15,7 +15,7 @@ Body* CreateBody()
 	body->prev = NULL;
 	body->next = bodies;
 	//If list is not empty, update 'prev' of existing head
-	if (&bodies[bodyCount] != NULL)
+	if (bodyCount > 0)
 	{
 		bodies->prev = body->prev;
 	}
