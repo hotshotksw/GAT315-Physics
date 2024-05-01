@@ -1,32 +1,33 @@
 #include "world.h"
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
-Body* bodies = NULL;
-int bodyCount = 0;
+kwBody* kwBodies = NULL;
+int kwBodyCount = 0;
 
-Body* CreateBody()
+kwBody* CreateBody()
 {
-	//Allocate memory for new Body
-	Body* body = (Body*)malloc(sizeof(Body));
-	//Check if allocation is successful
+	kwBody* body = (kwBody*)malloc(sizeof(kwBody));
 	assert(body);
-	//Initialize 'prev' to NULL and 'next' to the head of the list
+
+	memset(body, 0, sizeof(kwBody));
+
+	// add body to linkd list
 	body->prev = NULL;
-	body->next = bodies;
-	//If list is not empty, update 'prev' of existing head
-	if (bodyCount > 0)
+	body->next = kwBodies;
+	if (kwBodyCount > 0)
 	{
-		bodies->prev = body->prev;
+		kwBodies->prev = body->prev;
 	}
 	//Update head of the list to new Body
-	bodies = body;
+	kwBodies = body;
 	//Increment body count
-	bodyCount++;
+	kwBodyCount++;
 	//Return new Body
 	return body;
 }
-void DestroyBody(Body* body)
+void DestroyBody(kwBody* body)
 {
 	//Assert if provided Body is not NULL
 	assert(body);
@@ -35,12 +36,12 @@ void DestroyBody(Body* body)
 	//If 'next' is not NULL, set 'next->prev' to 'body->prev'
 	if (body->next) body->next->prev = body->prev;
 	//If body is the head, update head to 'body->next'
-	if (bodies == body)
+	if (kwBodies == body)
 	{
-		bodies = body->next;
+		kwBodies = body->next;
 	}
 	//Decrement body count
-	bodyCount--;
+	kwBodyCount--;
 	//Free the body
 	free(body);
 }

@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "world.h"
+#include "integrator.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -24,9 +25,27 @@ int main(void)
 		Vector2 position = GetMousePosition();
 		if (IsMouseButtonDown(0))
 		{
-			CreateBody();
-			bodies->position = position;
-			bodies->velocity = CreateVector2(GetRandomFloatValue(-5, 5), GetRandomFloatValue(-5, 5));
+			kwBody* body = CreateBody();
+			body->position = position;
+			body->mass = GetRandomFloatValue(1, 5);
+		}
+
+		// apply force
+		kwBody* body = kwBodies;
+		while (body)
+		{
+			ApplyForce(body, CreateVector2(0, -50));
+			body = body->next;
+		}
+
+		// update bodies
+		body = kwBodies;
+		while (body)
+		{
+			// update body position
+			ExplicitEuler(body, dt);
+			ClearForce(body);
+			body = body->next;
 		}
 
 		// render
@@ -38,29 +57,19 @@ int main(void)
 
 		DrawCircle((int)position.x, (int)position.y, 20, YELLOW);
 
-		// update / draw bodies
-		Body* body = bodies;
-		while (body) // do while we have a valid pointer, will be NULL at the end of the list
+		// draw bodies
+		body = kwBodies;
+		while (body)
 		{
-			// update body position
-			body->position = Vector2Add(body->position, body->velocity);
-			// draw body
-			DrawCircle((int)body->position.x, (int)body->position.y, 10, RED);
-
+			//DrawCircle((int)body->position.x, (int)body->position.y, 10, RED);
+			DrawCircleLines((int)body->position.x, (int)body->position.y, body->mass, RED);
 			body = body->next; // get next body
 		}
 
 		EndDrawing();
 	}
 	CloseWindow();
-	free(bodies);
+	free(kwBodies);
 
 	return 0;
 }
-
-// update bodies
-/*for (int i = 0; i < bodyCount; i++)
-{
-	bodies[i].position = Vector2Add(bodies[i].position, bodies[i].velocity);
-	DrawCircle((int)bodies[i].position.x, (int)bodies[i].position.y, 10, RED);
-}*/
