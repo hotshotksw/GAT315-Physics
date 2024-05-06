@@ -1,10 +1,12 @@
 #include "world.h"
+#include "body.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
 kwBody* kwBodies = NULL;
 int kwBodyCount = 0;
+Vector2 kwGravity;
 
 kwBody* CreateBody()
 {
@@ -13,7 +15,7 @@ kwBody* CreateBody()
 
 	memset(body, 0, sizeof(kwBody));
 
-	// add body to linkd list
+	// add body to linked list
 	body->prev = NULL;
 	body->next = kwBodies;
 	if (kwBodyCount > 0)
