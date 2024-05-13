@@ -8,27 +8,40 @@ kwBody* kwBodies = NULL;
 int kwBodyCount = 0;
 Vector2 kwGravity;
 
-kwBody* CreateBody()
+kwBody* CreateBody(Vector2 position, float mass, kwBodyType bodyType)
 {
 	kwBody* body = (kwBody*)malloc(sizeof(kwBody));
 	assert(body);
 
-	memset(body, 0, sizeof(kwBody));
 
-	// add body to linked list
-	body->prev = NULL;
-	body->next = kwBodies;
-	if (kwBodyCount > 0)
-	{
-		kwBodies->prev = body->prev;
-	}
-	//Update head of the list to new Body
-	kwBodies = body;
-	//Increment body count
-	kwBodyCount++;
+	memset(body, 0, sizeof(kwBody));
+	body->position = position;
+	body->mass = mass;
+	body->inverseMass = (bodyType == BT_DYNAMIC) ? 1 / mass : 0;
+	body->type = bodyType;
+	
 	//Return new Body
 	return body;
 }
+
+void AddBody(kwBody* body) 
+{
+	assert(body);
+
+	// add element to linked list
+	body->prev = NULL;
+	body->next = kwBodies;
+
+	if (kwBodyCount != NULL)
+	{
+		kwBodies->prev = body;
+	}
+	//Update head of elements to new element
+	kwBodies = body;
+	//Increment body count
+	kwBodyCount++;
+}
+
 void DestroyBody(kwBody* body)
 {
 	//Assert if provided Body is not NULL

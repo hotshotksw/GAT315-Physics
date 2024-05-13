@@ -4,6 +4,10 @@
 #include "raymath.h"
 #include "world.h"
 #include "integrator.h"
+#include "force.h"
+#include "render.h"
+#include "editor.h"
+#include "spring.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -19,10 +23,14 @@ void EmissionFour(Vector2 position);
 
 int main(void)
 {
+	kwBody* selectedBody = NULL;
+	kwBody* connectBody = NULL;
+
 	int windowWidth = 1280;
 	int windowHeight = 720;
 	
 	InitWindow(windowWidth, windowHeight, "Physics Engine");
+	InitEditor();
 	SetTargetFPS(60);
 
 	int mode = 1;
@@ -30,7 +38,7 @@ int main(void)
 	float timer = 0;
 
 	// initialize world
-	kwGravity = (Vector2){ 0, 30 };
+	kwGravity = (Vector2){ 0, -1 };
 
 	// game loop
 	while (!WindowShouldClose())
@@ -40,17 +48,28 @@ int main(void)
 		float fps = (float)GetFPS();
 
 		Vector2 position = GetMousePosition();
-		
+		ncScreenZoom += GetMouseWheelMove() * -0.2f;
+		ncScreenZoom = Clamp(ncScreenZoom, 0.1f, 10);
+
+		UpdateEditor(position);
+
+		selectedBody = GetBodyIntersect(kwBodies, position);
+		if (selectedBody)
+		{
+			Vector2 screen = ConvertWorldToScreen(selectedBody->position);
+			DrawCircleLines(screen.x, screen.y, ConvertWorldToPixel(selectedBody->mass) + 5, YELLOW);
+		}
+
 		switch (mode)
 		{
 		case 1:
-			if (IsMouseButtonDown(0))
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				EmissionOne(position);
 			}
 			break;
 		case 2:
-			if (IsMouseButtonPressed(0))
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				EmissionTwo(position);
 			}
@@ -79,7 +98,7 @@ int main(void)
 				rotation += 360;
 			}
 
-			if (IsMouseButtonDown(0))
+			if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 			{
 				EmissionThree(position, rotation);
 			}
@@ -91,6 +110,17 @@ int main(void)
 			}
 		}
 
+		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && selectedBody) connectBody = selectedBody;
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && connectBody) DrawLineBodyToPosition(connectBody, position);
+		if (IsMouseButtonReleased(MOUSE_BUTTON_RIGHT) && connectBody)
+		{
+			if (selectedBody && selectedBody != connectBody)
+			{
+				kwSpring_t* spring = CreateSpring(connectBody, selectedBody, Vector2Distance(connectBody->position, selectedBody->position), kwEditorData.StiffnessValue);
+				AddSpring(spring);
+			}
+		}
+
 		if (IsKeyPressed(258))
 		{
 			mode++;
@@ -98,12 +128,8 @@ int main(void)
 		}
 
 		// apply force
-		kwBody* body = kwBodies;
-		while (body)
-		{
-			//ApplyForce(body, CreateVector2(0, -50), FM_FORCE);
-			body = body->next;
-		}
+		ApplyGravitation(kwBodies, kwEditorData.GravitationValue);
+		ApplySpringForce(kwSprings);
 
 		// update bodies
 		for (kwBody* body = kwBodies; body; body = body->next)
@@ -111,31 +137,23 @@ int main(void)
 			Step(body, dt);
 		}
 
-		body = kwBodies;
-		while (body)
-		{
-			// update body position
-			Step(body, dt);
-			body = body->next;
-		}
-
 		// render
 		BeginDrawing();
 		ClearBackground(BLACK);
+
 		// stats
 		RenderGUI(fps, dt, mode, rotation, windowWidth, windowHeight);
 
-		DrawCircle((int)position.x, (int)position.y, 20, YELLOW);
+		//DrawCircle((int)position.x, (int)position.y, 20, YELLOW);
 
 		// draw bodies
-		body = kwBodies;
-		while (body)
+		for (kwBody* body = kwBodies; body; body = body->next)
 		{
-			//DrawCircle((int)body->position.x, (int)body->position.y, 10, RED);
+			Vector2 screen = ConvertWorldToScreen(body->position);
 			switch (mode)
 			{
 			case 1:
-				DrawCircleLines((int)body->position.x, (int)body->position.y, body->mass, RED);
+				DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass), body->color);
 				break;
 			case 2:
 				DrawRectangle((int)body->position.x, (int)body->position.y, 50, 50, RAYWHITE);
@@ -156,9 +174,15 @@ int main(void)
 				}
 				break;
 			}
-		
-			body = body->next; // get next body
 		}
+
+		for (kwSpring_t* spring = kwSprings; spring; spring = spring->next)
+		{
+			Vector2 screen1 = ConvertWorldToScreen(spring->body1->position);
+			Vector2 screen2 = ConvertWorldToScreen(spring->body2->position);
+			DrawLine((int)screen1.x, (int)screen1.y, (int)screen2.x, (int)screen2.y, YELLOW);
+		}
+		DrawEditor(position);
 
 		EndDrawing();
 	}
@@ -181,14 +205,12 @@ void RenderGUI(float fps, float dt, int mode, int rotation, int windowWidth, int
 }
 
 void EmissionOne(Vector2 position) {
-	kwBody* body = CreateBody();
-	body->position = position;
-	body->mass = GetRandomFloatValue(1, 5);
-	body->inverseMass = 1 / body->mass;
-	body->type = BT_DYNAMIC;
-	body->damping = 2.5f;
-	body->gravityScale = 20;
-	ApplyForce(body, (Vector2) { GetRandomFloatValue(-100, 100), GetRandomFloatValue(-100, 100) }, FM_VELOCITY);
+	kwBody* body = CreateBody(ConvertScreenToWorld(position), kwEditorData.MassMinValue, kwEditorData.BodyTypeActive);
+	body->damping = kwEditorData.DampingValue;
+	body->gravityScale = kwEditorData.BodyGravityValue;
+	body->color = (Color){ (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), 255 };
+	
+	AddBody(body);
 }
 
 /*
@@ -203,7 +225,7 @@ void EmissionOne(Vector2 position) {
 */
 
 void EmissionTwo(Vector2 position) {
-	Vector2 eBodies[] = { 
+	/*Vector2 eBodies[] = { 
 		{ -3, -4 }, { -1, -4 }, { 1, -4 }, { 3, -4 },
 		{ -4, -3 }, { -2, -3 }, { 0, -3 }, { 2, -3 }
 	};
@@ -221,28 +243,28 @@ void EmissionTwo(Vector2 position) {
 			body->gravityScale = 10;
 			ApplyForce(body, (Vector2) { eBodies[j].x * 120, (eBodies[j].y + (i*2)) * 120 }, FM_VELOCITY);
 		}
-	}
+	}*/
 	
 }
 
 void EmissionThree(Vector2 position, int rotation) {
-	kwBody* body = CreateBody();
+	/*kwBody* body = CreateBody();
 	body->position = position;
 	body->mass = GetRandomFloatValue(1, 5);
 	body->inverseMass = 1 / body->mass;
 	body->type = BT_DYNAMIC;
 	body->damping = 2.5f;
 	body->gravityScale = 20;
-	ApplyForce(body, (Vector2) { 500.0f * (float)(-sin(rotation)), 500.0f * (float)(cos(rotation)) }, FM_VELOCITY);
+	ApplyForce(body, (Vector2) { 500.0f * (float)(-sin(rotation)), 500.0f * (float)(cos(rotation)) }, FM_VELOCITY);*/
 }
 
 void EmissionFour(Vector2 position) {
-	kwBody* body = CreateBody();
+	/*kwBody* body = CreateBody();
 	body->position = position;
 	body->mass = GetRandomFloatValue(1, 5);
 	body->inverseMass = 1 / body->mass;
 	body->type = BT_DYNAMIC;
 	body->damping = 2.5f;
 	body->gravityScale = 20;
-	ApplyForce(body, (Vector2) { GetRandomFloatValue(-100, 100), GetRandomFloatValue(-100, 100) }, FM_VELOCITY);
+	ApplyForce(body, (Vector2) { GetRandomFloatValue(-100, 100), GetRandomFloatValue(-100, 100) }, FM_VELOCITY);*/
 }

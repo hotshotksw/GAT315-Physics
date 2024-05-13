@@ -4,9 +4,9 @@
 
 typedef enum 
 {
+	BT_DYNAMIC,
 	BT_STATIC,
-	BT_KINEMATIC,
-	BT_DYNAMIC
+	BT_KINEMATIC
 } kwBodyType;
 
 typedef enum
