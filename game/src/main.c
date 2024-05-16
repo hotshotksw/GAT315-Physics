@@ -8,6 +8,8 @@
 #include "render.h"
 #include "editor.h"
 #include "spring.h"
+#include "collision.h"
+#include "contact.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -57,13 +59,13 @@ int main(void)
 		if (selectedBody)
 		{
 			Vector2 screen = ConvertWorldToScreen(selectedBody->position);
-			DrawCircleLines(screen.x, screen.y, ConvertWorldToPixel(selectedBody->mass) + 5, YELLOW);
+			DrawCircleLines(screen.x, screen.y, ConvertWorldToPixel(selectedBody->mass * 0.5f) + 5, YELLOW);
 		}
 
 		switch (mode)
 		{
 		case 1:
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_CONTROL)))
 			{
 				EmissionOne(position);
 			}
@@ -137,6 +139,12 @@ int main(void)
 			Step(body, dt);
 		}
 
+		// collision
+		ncContact_t* contacts = NULL;
+		CreateContacts(kwBodies, &contacts);
+		SeparateContacts(contacts);
+		ResolveContacts(contacts);
+
 		// render
 		BeginDrawing();
 		ClearBackground(BLACK);
@@ -146,6 +154,13 @@ int main(void)
 
 		//DrawCircle((int)position.x, (int)position.y, 20, YELLOW);
 
+		// Draw Springs
+		for (kwSpring_t* spring = kwSprings; spring; spring = spring->next)
+		{
+			Vector2 screen1 = ConvertWorldToScreen(spring->body1->position);
+			Vector2 screen2 = ConvertWorldToScreen(spring->body2->position);
+			DrawLine((int)screen1.x, (int)screen1.y, (int)screen2.x, (int)screen2.y, YELLOW);
+		}
 		// draw bodies
 		for (kwBody* body = kwBodies; body; body = body->next)
 		{
@@ -153,7 +168,7 @@ int main(void)
 			switch (mode)
 			{
 			case 1:
-				DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass), body->color);
+				DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass * 0.5f), body->color);
 				break;
 			case 2:
 				DrawRectangle((int)body->position.x, (int)body->position.y, 50, 50, RAYWHITE);
@@ -175,13 +190,13 @@ int main(void)
 				break;
 			}
 		}
-
-		for (kwSpring_t* spring = kwSprings; spring; spring = spring->next)
+		// Draw Contacts
+		for (ncContact_t* contact = contacts; contact; contact = contact->next)
 		{
-			Vector2 screen1 = ConvertWorldToScreen(spring->body1->position);
-			Vector2 screen2 = ConvertWorldToScreen(spring->body2->position);
-			DrawLine((int)screen1.x, (int)screen1.y, (int)screen2.x, (int)screen2.y, YELLOW);
+			Vector2 screen = ConvertWorldToScreen(contact->body1->position);
+			DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(contact->body1->mass * 0.5f), RED);
 		}
+		
 		DrawEditor(position);
 
 		EndDrawing();
@@ -208,21 +223,10 @@ void EmissionOne(Vector2 position) {
 	kwBody* body = CreateBody(ConvertScreenToWorld(position), kwEditorData.MassMinValue, kwEditorData.BodyTypeActive);
 	body->damping = kwEditorData.DampingValue;
 	body->gravityScale = kwEditorData.BodyGravityValue;
-	body->color = (Color){ (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), 255 };
-	
+	body->color = WHITE;//(Color){ (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), 255 };
+	body->restitution = 0.8f;
 	AddBody(body);
 }
-
-/*
-*  # # # #
-* # # # # 
-*  # # # #
-* # # # # 
-*  # # # #
-* # # # # 
-*  # # # #
-* # # # # 
-*/
 
 void EmissionTwo(Vector2 position) {
 	/*Vector2 eBodies[] = { 

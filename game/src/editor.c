@@ -57,7 +57,7 @@ void DrawEditor(Vector2 position)
         GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 136, 120, 16 }, "Body Mass", NULL, & kwEditorData.MassMinValue, 1, 10);
         GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 168, 120, 16 }, "Body Damping", NULL, & kwEditorData.DampingValue, 0, 100);
         GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 280, 120, 16 }, "Gravitation", NULL, & kwEditorData.GravitationValue, 0, 100);
-        GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 312, 120, 16 }, "Spring Length", NULL, & kwEditorData.StiffnessValue, 1, 100);
+        GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 312, 120, 16 }, "Spring Stiffness", NULL, & kwEditorData.StiffnessValue, 1, 100);
         if (GuiDropdownBox((Rectangle) { kwEditorData.anchor01.x + 40, kwEditorData.anchor01.y + 72, 208, 24 }, "DYNAMIC;STATIC;KINEMATIC", & kwEditorData.BodyTypeActive, kwEditorData.BodyTypeEditMode)) kwEditorData.BodyTypeEditMode = !kwEditorData.BodyTypeEditMode;
     }
     GuiGroupBox((Rectangle) { 832 + 110, 104, 240, 144 }, "BODY PROPERTIES");
@@ -73,7 +73,7 @@ kwBody* GetBodyIntersect(kwBody* bodies, Vector2 position)
     for (kwBody* body = bodies; body; body = body->next)
     {
         Vector2 screen = ConvertWorldToScreen(body->position);
-        if (CheckCollisionPointCircle(position, screen, ConvertWorldToPixel(body->mass)))
+        if (CheckCollisionPointCircle(position, screen, ConvertWorldToPixel(body->mass * 0.5f)))
         {
             return body;
         }

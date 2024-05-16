@@ -30,6 +30,8 @@ typedef struct kwBody
 	float gravityScale;
 	float damping;
 
+	float restitution;
+
 	Color color;
 
 	struct kwBody* next;
@@ -47,7 +49,7 @@ inline void ApplyForce(kwBody* body, Vector2 force, kwForceMode mode)
 		break;
 	case FM_IMPULSE:
 		// applies a sudden change in momentum
-		body->velocity = Vector2Scale(force, body->inverseMass);
+		body->velocity = Vector2Add(body->velocity, Vector2Scale(force, body->inverseMass));
 		break;
 	case FM_VELOCITY:
 		body->velocity = force;
