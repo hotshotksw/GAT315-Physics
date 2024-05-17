@@ -39,6 +39,7 @@ void InitEditor()
     kwEditorData.BodyGravityValue = 0.0f;
     kwEditorData.DampingValue = 0.0f;
     kwEditorData.StiffnessValue = 20.0f;
+    kwEditorData.RestitutionValue = 0.3f;
 }
 
 void UpdateEditor(Vector2 position)
@@ -56,11 +57,12 @@ void DrawEditor(Vector2 position)
         GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 104, 120, 16 }, "Gravity Scale", NULL, & kwEditorData.BodyGravityValue, 0, 100);
         GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 136, 120, 16 }, "Body Mass", NULL, & kwEditorData.MassMinValue, 1, 10);
         GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 168, 120, 16 }, "Body Damping", NULL, & kwEditorData.DampingValue, 0, 100);
+        GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 200, 120, 16 }, "Restitution", NULL, & kwEditorData.RestitutionValue, 0, 1);
         GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 280, 120, 16 }, "Gravitation", NULL, & kwEditorData.GravitationValue, 0, 100);
-        GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 312, 120, 16 }, "Spring Stiffness", NULL, & kwEditorData.StiffnessValue, 1, 100);
+        GuiSliderBar((Rectangle) { kwEditorData.anchor01.x + 128, kwEditorData.anchor01.y + 312, 120, 16 }, "Spring Stiffness (k)", NULL, & kwEditorData.StiffnessValue, 1, 100);
         if (GuiDropdownBox((Rectangle) { kwEditorData.anchor01.x + 40, kwEditorData.anchor01.y + 72, 208, 24 }, "DYNAMIC;STATIC;KINEMATIC", & kwEditorData.BodyTypeActive, kwEditorData.BodyTypeEditMode)) kwEditorData.BodyTypeEditMode = !kwEditorData.BodyTypeEditMode;
     }
-    GuiGroupBox((Rectangle) { 832 + 110, 104, 240, 144 }, "BODY PROPERTIES");
+    GuiGroupBox((Rectangle) { 832 + 110, 108, 240, 168 }, "BODY PROPERTIES");
     GuiGroupBox((Rectangle) { kwEditorData.anchor04.x + 110, kwEditorData.anchor04.y + 0, 240, 104 }, "WORLD PROPERTIES");
 
     DrawTexture(cursorTexture, position.x - cursorTexture.width / 2, position.y - cursorTexture.height / 2, WHITE);

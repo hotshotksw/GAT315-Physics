@@ -17,6 +17,7 @@ typedef struct kwEditorData
     float BodyGravityValue;
     float DampingValue;
     float StiffnessValue;
+    float RestitutionValue;
 } kwEditorData_t;
 
 extern kwEditorData_t kwEditorData;

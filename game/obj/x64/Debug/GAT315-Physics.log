@@ -1,6 +1,4 @@
-﻿  force.c
-  main.c
-  Generating Code...
-C:\Coding\C++\game-premake-main\GAT315-Physics\game\src\main.c(62,26): warning C4244: 'function': conversion from 'float' to 'int', possible loss of data
-C:\Coding\C++\game-premake-main\GAT315-Physics\game\src\main.c(62,36): warning C4244: 'function': conversion from 'float' to 'int', possible loss of data
+﻿  editor.c
+C:\Coding\C++\game-premake-main\GAT315-Physics\game\src\editor.c(68,43): warning C4244: 'function': conversion from 'float' to 'int', possible loss of data
+C:\Coding\C++\game-premake-main\GAT315-Physics\game\src\editor.c(68,81): warning C4244: 'function': conversion from 'float' to 'int', possible loss of data
   GAT315-Physics.vcxproj -> C:\Coding\C++\game-premake-main\GAT315-Physics\bin\Debug\GAT315-Physics.exe
