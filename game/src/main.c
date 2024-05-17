@@ -224,7 +224,7 @@ void EmissionOne(Vector2 position) {
 	body->damping = kwEditorData.DampingValue;
 	body->gravityScale = kwEditorData.BodyGravityValue;
 	body->color = WHITE;//(Color){ (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), 255 };
-	body->restitution = kwEditorData.RestitutionValue;
+	body->restitution = kwEditorData.RestitutionValue * 5;
 	AddBody(body);
 }
 
