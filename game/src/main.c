@@ -27,9 +27,13 @@ int main(void)
 {
 	kwBody* selectedBody = NULL;
 	kwBody* connectBody = NULL;
+	ncContact_t* contacts = NULL;
 
 	int windowWidth = 1280;
 	int windowHeight = 720;
+
+	float fixedTimestep = 1.0f / 60;
+	float timeAccumulator = 0;
 	
 	InitWindow(windowWidth, windowHeight, "Physics Engine");
 	InitEditor();
@@ -129,74 +133,78 @@ int main(void)
 			if (mode > 4) mode = 1;
 		}
 
-		// apply force
-		ApplyGravitation(kwBodies, kwEditorData.GravitationValue);
-		ApplySpringForce(kwSprings);
+		timeAccumulator += dt;
+		while (timeAccumulator >= fixedTimestep) {
+			timeAccumulator -= fixedTimestep;
+			// apply force
+			ApplyGravitation(kwBodies, kwEditorData.GravitationValue);
+			ApplySpringForce(kwSprings);
 
-		// update bodies
-		for (kwBody* body = kwBodies; body; body = body->next)
-		{
-			Step(body, dt);
-		}
-
-		// collision
-		ncContact_t* contacts = NULL;
-		CreateContacts(kwBodies, &contacts);
-		SeparateContacts(contacts);
-		ResolveContacts(contacts);
-
-		// render
-		BeginDrawing();
-		ClearBackground(BLACK);
-
-		// stats
-		RenderGUI(fps, dt, mode, rotation, windowWidth, windowHeight);
-
-		//DrawCircle((int)position.x, (int)position.y, 20, YELLOW);
-
-		// Draw Springs
-		for (kwSpring_t* spring = kwSprings; spring; spring = spring->next)
-		{
-			Vector2 screen1 = ConvertWorldToScreen(spring->body1->position);
-			Vector2 screen2 = ConvertWorldToScreen(spring->body2->position);
-			DrawLine((int)screen1.x, (int)screen1.y, (int)screen2.x, (int)screen2.y, YELLOW);
-		}
-		// draw bodies
-		for (kwBody* body = kwBodies; body; body = body->next)
-		{
-			Vector2 screen = ConvertWorldToScreen(body->position);
-			switch (mode)
+			// update bodies
+			for (kwBody* body = kwBodies; body; body = body->next)
 			{
-			case 1:
-				DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass * 0.5f), body->color);
-				break;
-			case 2:
-				DrawRectangle((int)body->position.x, (int)body->position.y, 50, 50, RAYWHITE);
-				break;
-			case 3:
-				DrawCircleLines((int)body->position.x, (int)body->position.y, body->mass * 2, LIME);
-				break;
-			case 4:
-				timer += dt;
-				if (timer > 64)
+				Step(body, dt);
+			}
+
+			// collision
+			contacts = NULL;
+			CreateContacts(kwBodies, &contacts);
+			SeparateContacts(contacts);
+			ResolveContacts(contacts);
+
+			// render
+			BeginDrawing();
+			ClearBackground(BLACK);
+
+			// stats
+			RenderGUI(fps, dt, mode, rotation, windowWidth, windowHeight);
+
+			//DrawCircle((int)position.x, (int)position.y, 20, YELLOW);
+
+			// Draw Springs
+			for (kwSpring_t* spring = kwSprings; spring; spring = spring->next)
+			{
+				Vector2 screen1 = ConvertWorldToScreen(spring->body1->position);
+				Vector2 screen2 = ConvertWorldToScreen(spring->body2->position);
+				DrawLine((int)screen1.x, (int)screen1.y, (int)screen2.x, (int)screen2.y, YELLOW);
+			}
+			// draw bodies
+			for (kwBody* body = kwBodies; body; body = body->next)
+			{
+				Vector2 screen = ConvertWorldToScreen(body->position);
+				switch (mode)
 				{
-					DrawCircle((int)body->position.x, (int)body->position.y, body->mass * 2, (Color) { (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255)
-					});
+				case 1:
+					DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(body->mass * 0.5f), body->color);
+					break;
+				case 2:
+					DrawRectangle((int)body->position.x, (int)body->position.y, 50, 50, RAYWHITE);
+					break;
+				case 3:
+					DrawCircleLines((int)body->position.x, (int)body->position.y, body->mass * 2, LIME);
+					break;
+				case 4:
+					timer += dt;
+					if (timer > 64)
+					{
+						DrawCircle((int)body->position.x, (int)body->position.y, body->mass * 2, (Color) {
+							(int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255), (int)GetRandomFloatValue(0, 255)
+						});
+					}
+					if (timer > 256)
+					{
+						timer = 0;
+					}
+					break;
 				}
-				if (timer > 256)
-				{
-					timer = 0;
-				}
-				break;
+			}
+			// Draw Contacts
+			for (ncContact_t* contact = contacts; contact; contact = contact->next)
+			{
+				Vector2 screen = ConvertWorldToScreen(contact->body1->position);
+				DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(contact->body1->mass * 0.5f), RED);
 			}
 		}
-		// Draw Contacts
-		for (ncContact_t* contact = contacts; contact; contact = contact->next)
-		{
-			Vector2 screen = ConvertWorldToScreen(contact->body1->position);
-			DrawCircle((int)screen.x, (int)screen.y, ConvertWorldToPixel(contact->body1->mass * 0.5f), RED);
-		}
-		
 		DrawEditor(position);
 
 		EndDrawing();

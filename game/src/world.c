@@ -60,3 +60,11 @@ void DestroyBody(kwBody* body)
 	//Free the body
 	free(body);
 }
+
+void DestroyAllBodies() {
+	if (kwBodies == NULL) return;
+
+	for (kwBody* body = kwBodies; body; body->next) {
+		DestroyBody(body);
+	}
+}
